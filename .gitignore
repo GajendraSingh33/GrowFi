@@ -1,0 +1,8 @@
+design.md
+PRD.pdf
+set_up.md
+
+node_modules/
+.env
+dist/
+.DS_Store
