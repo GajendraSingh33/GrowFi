@@ -60,6 +60,7 @@ model User {
 
   incomeSources     IncomeSource[]
   expenses          Expense[]
+  expenseCategories ExpenseCategory[]
   habits            Habit[]
   savingsGoals      SavingsGoal[]
   assets            Asset[]
@@ -85,11 +86,14 @@ model IncomeSource {
 
 model ExpenseCategory {
   categoryId String    @id @default(uuid()) @map("category_id") @db.Uuid
+  userId     String?   @map("user_id") @db.Uuid
   name       String    @db.VarChar(80)
   icon       String?   @db.VarChar(50)
   isDefault  Boolean   @default(true) @map("is_default")
+  user       User?     @relation(fields: [userId], references: [userId], onDelete: Cascade)
   expenses   Expense[]
 
+  @@index([userId])
   @@map("expense_categories")
 }
 

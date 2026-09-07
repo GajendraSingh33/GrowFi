@@ -2,6 +2,7 @@ design.md
 PRD.pdf
 set_up.md
 DOCS
+api-spec.md
 
 node_modules/
 .env
