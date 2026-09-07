@@ -134,8 +134,6 @@ model HabitLog {
   habitId     String         @map("habit_id") @db.Uuid
   logDate     DateTime       @map("log_date") @db.Date
   status      HabitLogStatus
-  /// Computed and maintained server-side from this habit's log history; never trust client input.
-  streakCount Int            @map("streak_count")
   createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
 
   habit Habit @relation(fields: [habitId], references: [habitId], onDelete: Cascade)

@@ -20,7 +20,7 @@ open-question contract is maintained in [`api-spec.md`](../../../../../api-spec.
 | GrowFi API | GET/POST/PUT/DELETE | `/api/expenses`, `/api/expenses/:id` | Expense fields and filters | Expense |
 | GrowFi API | GET/POST/DELETE | `/api/expense-categories`, `/api/expense-categories/:id` | ExpenseCategory writable fields | ExpenseCategory |
 | GrowFi API | GET/POST/PUT/DELETE | `/api/habits`, `/api/habits/:id` | Habit fields | Habit plus computed streakCount |
-| GrowFi API | POST/GET | `/api/habits/:id/log`, `/api/habits/:id/logs` | HabitLog command/filter | HabitLog |
+| GrowFi API | POST/GET/DELETE | `/api/habits/:id/log`, `/api/habits/:id/logs`, `/api/habits/:id/logs/:logId` | HabitLog upsert/filter/delete | HabitLog |
 | GrowFi API | GET/POST/PUT/DELETE | `/api/goals`, `/api/goals/:id` | SavingsGoal fields and contribution command | SavingsGoal plus percentComplete |
 | GrowFi API | GET/POST/PUT/DELETE | `/api/assets`, `/api/assets/:id` | Asset fields | Asset |
 | GrowFi API | GET | `/api/networth`, `/api/networth/history`, `/api/dashboard` | Date filters | Computed net-worth/dashboard DTOs |
@@ -37,7 +37,7 @@ open-question contract is maintained in [`api-spec.md`](../../../../../api-spec.
 Persisted response contracts use the Prisma model field names from
 `backend/prisma/schema.prisma`. Decimal values serialize as strings and dates
 as ISO date/timestamp strings. `passwordHash` is never exposed. Computed
-`streakCount`, `percentComplete`, net-worth totals, dashboard totals, and
+`streakCount` (computed live from logs), `percentComplete`, net-worth totals, dashboard totals, and
 analytics KPIs are server-owned DTO values.
 
 ## Communication Patterns
