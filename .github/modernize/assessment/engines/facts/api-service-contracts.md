@@ -21,9 +21,9 @@ open-question contract is maintained in [`api-spec.md`](../../../../../api-spec.
 | GrowFi API | GET/POST/DELETE | `/api/expense-categories`, `/api/expense-categories/:id` | ExpenseCategory writable fields | ExpenseCategory |
 | GrowFi API | GET/POST/PUT/DELETE | `/api/habits`, `/api/habits/:id` | Habit fields | Habit plus computed streakCount |
 | GrowFi API | POST/GET/DELETE | `/api/habits/:id/log`, `/api/habits/:id/logs`, `/api/habits/:id/logs/:logId` | HabitLog upsert/filter/delete | HabitLog |
-| GrowFi API | GET/POST/PUT/DELETE | `/api/goals`, `/api/goals/:id` | SavingsGoal fields and contribution command | SavingsGoal plus percentComplete |
+| GrowFi API | GET/POST/PUT/DELETE | `/api/goals`, `/api/goals/:id` | SavingsGoal fields with full-value currentAmount update | SavingsGoal plus percentComplete |
 | GrowFi API | GET/POST/PUT/DELETE | `/api/assets`, `/api/assets/:id` | Asset fields | Asset |
-| GrowFi API | GET | `/api/networth`, `/api/networth/history`, `/api/dashboard` | Date filters | Computed net-worth/dashboard DTOs |
+| GrowFi API | GET/POST | `/api/networth`, `/api/networth/history`, `/api/networth/snapshot`, `/api/dashboard` | Date filters and authenticated snapshot trigger | Computed net-worth/dashboard DTOs |
 | GrowFi API | GET/PATCH | `/api/admin/users`, `/api/admin/users/:id`, `/api/admin/feedback`, `/api/admin/feedback/:id`, `/api/admin/analytics` | Admin filters/commands | Admin DTOs and KPI DTO |
 
 ## Management & Observability Endpoints
@@ -38,7 +38,12 @@ Persisted response contracts use the Prisma model field names from
 `backend/prisma/schema.prisma`. Decimal values serialize as strings and dates
 as ISO date/timestamp strings. `passwordHash` is never exposed. Computed
 `streakCount` (computed live from logs), `percentComplete`, net-worth totals, dashboard totals, and
-analytics KPIs are server-owned DTO values.
+analytics KPIs are server-owned DTO values. Active users are distinct
+non-deleted users with expenses or habit logs in the 30-day period; engagement
+is users with either activity in the last 7 days divided by non-deleted users.
+Habit completion uses completed logs divided by expected frequency periods, and
+goal completion averages capped current/target amounts. Reopening resolved
+feedback requires an explicit `force: true` command.
 
 ## Communication Patterns
 
