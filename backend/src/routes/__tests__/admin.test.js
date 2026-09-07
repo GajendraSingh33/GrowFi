@@ -19,9 +19,12 @@ jest.mock("../../db/client", () => ({
     update: jest.fn(),
   },
   expense: { findMany: jest.fn() },
+  incomeSource: { findMany: jest.fn() },
   habitLog: { findMany: jest.fn() },
   habit: { findMany: jest.fn() },
   savingsGoal: { findMany: jest.fn() },
+  asset: { findMany: jest.fn() },
+  loginEvent: { findMany: jest.fn() },
 }));
 
 const admin = {
@@ -65,9 +68,12 @@ beforeEach(() => {
     resolvedAt: new Date("2026-09-07T00:00:00.000Z"),
   });
   prisma.expense.findMany.mockResolvedValue([]);
+  prisma.incomeSource.findMany.mockResolvedValue([]);
   prisma.habitLog.findMany.mockResolvedValue([]);
   prisma.habit.findMany.mockResolvedValue([]);
   prisma.savingsGoal.findMany.mockResolvedValue([]);
+  prisma.asset.findMany.mockResolvedValue([]);
+  prisma.loginEvent.findMany.mockResolvedValue([]);
 });
 
 test.each([
@@ -148,4 +154,45 @@ test("returns zero-valued analytics for an empty dataset", async () => {
   for (const value of Object.values(response.body.data).slice(2)) {
     expect(typeof value).toBe("number");
   }
+});
+
+test("counts a user whose only recent activity is a login", async () => {
+  prisma.loginEvent.findMany.mockResolvedValue([{ userId: regularUser.userId }]);
+  prisma.user.findMany.mockResolvedValue([{ userId: regularUser.userId }]);
+
+  const response = await request(app).get("/api/admin/analytics").set(auth());
+
+  expect(response.status).toBe(200);
+  expect(response.body.data.activeUsers).toBe(1);
+});
+
+test("excludes a login older than seven days from recent activity", async () => {
+  prisma.user.findMany.mockResolvedValue([{ userId: regularUser.userId }]);
+  prisma.loginEvent.findMany.mockImplementation(({ where }) => {
+    const oldLogin = new Date(Date.now() - (8 * 24 * 60 * 60 * 1000));
+    return oldLogin < where.loggedInAt.gte ? [] : [{ userId: regularUser.userId }];
+  });
+
+  const response = await request(app).get("/api/admin/analytics").set(auth());
+
+  expect(response.status).toBe(200);
+  expect(response.body.data.activeUsers).toBe(0);
+  expect(prisma.loginEvent.findMany).toHaveBeenCalledWith(expect.objectContaining({
+    where: {
+      loggedInAt: expect.objectContaining({
+        gte: expect.any(Date),
+        lt: expect.any(Date),
+      }),
+    },
+    select: { userId: true },
+  }));
+});
+
+test("does not count a user with no recent login or activity", async () => {
+  prisma.user.findMany.mockResolvedValue([{ userId: regularUser.userId }]);
+
+  const response = await request(app).get("/api/admin/analytics").set(auth());
+
+  expect(response.status).toBe(200);
+  expect(response.body.data.activeUsers).toBe(0);
 });

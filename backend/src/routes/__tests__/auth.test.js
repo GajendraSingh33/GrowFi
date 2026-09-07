@@ -16,6 +16,9 @@ jest.mock("../../db/client", () => ({
     create: jest.fn(),
     findUnique: jest.fn(),
   },
+  loginEvent: {
+    create: jest.fn(),
+  },
 }));
 
 const adminTestApp = express();
@@ -48,6 +51,7 @@ function tokenFor(user, options = {}) {
 beforeEach(() => {
   users.clear();
   jest.clearAllMocks();
+  prisma.loginEvent.create.mockResolvedValue({});
   prisma.user.create.mockImplementation(async ({ data }) => {
     if (users.has(data.email)) {
       const error = new Error("duplicate");
@@ -134,6 +138,21 @@ describe("auth API", () => {
     expect(response.status).toBe(200);
     expect(response.body.data.expiresIn).toBe(86400);
     expect(response.body.data.user.email).toBe("asha@example.com");
+    expect(response.body.data.token).toEqual(expect.any(String));
+    expect(prisma.loginEvent.create).toHaveBeenCalledWith({
+      data: { userId: expect.any(String) },
+    });
+  });
+
+  test("still succeeds when login event persistence fails", async () => {
+    users.set("asha@example.com", makeUser());
+    prisma.loginEvent.create.mockRejectedValue(new Error("analytics unavailable"));
+
+    const response = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "asha@example.com", password: "Password1" });
+
+    expect(response.status).toBe(200);
     expect(response.body.data.token).toEqual(expect.any(String));
   });
 

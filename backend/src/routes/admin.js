@@ -165,22 +165,40 @@ router.get("/analytics", async (req, res, next) => {
     to.setUTCHours(0, 0, 0, 0);
     const from = query.from ? utcStart(query.from) : new Date(to.getTime() - (30 * 24 * 60 * 60 * 1000));
     if (from >= to) throw new AppError(400, "VALIDATION_ERROR", "from must be before to");
-    const engagementFrom = new Date(to.getTime() - (7 * 24 * 60 * 60 * 1000));
+    const activeFrom = new Date(to.getTime() - (7 * 24 * 60 * 60 * 1000));
 
-    // TODO: Confirm active-user definition; Phase 1 uses expenses or habit logs in the last 30 days.
     // TODO: Confirm habit denominator; Phase 1 counts one expected occurrence per frequency period.
     // TODO: Confirm engagement definition; Phase 1 uses registered users with recent expense or habit-log activity.
-    const [users, expenses, logs, habits, goals, engagementExpenses, engagementLogs] = await Promise.all([
+    const [users, expenses, incomeSources, activeLogs, habits, goals, goalActivity, assets, loginEvents, logs] = await Promise.all([
       prisma.user.findMany({ where: { deletedAt: null }, select: { userId: true } }),
-      prisma.expense.findMany({ where: { expenseDate: { gte: from, lt: to } }, select: { userId: true } }),
-      prisma.habitLog.findMany({ where: { logDate: { gte: from, lt: to } }, select: { habitId: true, status: true, logDate: true, habit: { select: { userId: true } } } }),
+      prisma.expense.findMany({ where: { OR: [{ createdAt: { gte: activeFrom, lt: to } }, { updatedAt: { gte: activeFrom, lt: to } }] }, select: { userId: true } }),
+      prisma.incomeSource.findMany({ where: { OR: [{ createdAt: { gte: activeFrom, lt: to } }, { updatedAt: { gte: activeFrom, lt: to } }] }, select: { userId: true } }),
+      prisma.habitLog.findMany({ where: { OR: [{ createdAt: { gte: activeFrom, lt: to } }, { updatedAt: { gte: activeFrom, lt: to } }] }, select: { habit: { select: { userId: true } } } }),
       prisma.habit.findMany({ select: { habitId: true, userId: true, frequency: true, startDate: true } }),
-      prisma.savingsGoal.findMany({ where: { status: { in: ["active", "completed"] } }, select: { currentAmount: true, targetAmount: true } }),
-      prisma.expense.findMany({ where: { expenseDate: { gte: engagementFrom, lt: to } }, select: { userId: true } }),
-      prisma.habitLog.findMany({ where: { logDate: { gte: engagementFrom, lt: to } }, select: { habit: { select: { userId: true } } } }),
+      prisma.savingsGoal.findMany({ where: { status: { in: ["active", "completed"] } }, select: { currentAmount: true, targetAmount: true, userId: true, updatedAt: true } }),
+      prisma.savingsGoal.findMany({ where: { updatedAt: { gte: activeFrom, lt: to } }, select: { userId: true } }),
+      prisma.asset.findMany({
+        where: {
+          OR: [
+            { createdAt: { gte: activeFrom, lt: to } },
+            { lastUpdated: { gte: activeFrom, lt: to } },
+          ],
+        },
+        select: { userId: true },
+      }),
+      prisma.loginEvent.findMany({ where: { loggedInAt: { gte: activeFrom, lt: to } }, select: { userId: true } }),
+      prisma.habitLog.findMany({ where: { logDate: { gte: from, lt: to } }, select: { habitId: true, status: true, logDate: true, habit: { select: { userId: true } } } }),
     ]);
-    const activeUserIds = new Set([...expenses.map((item) => item.userId), ...logs.map((item) => item.habit.userId)]);
-    const engagementUserIds = new Set([...engagementExpenses.map((item) => item.userId), ...engagementLogs.map((item) => item.habit.userId)]);
+    // Final definition: active users are non-deleted users with a login or financial/habit activity in the last 7 days.
+    const eligibleUserIds = new Set(users.map((item) => item.userId));
+    const activeUserIds = new Set([
+      ...loginEvents.map((item) => item.userId),
+      ...expenses.map((item) => item.userId),
+      ...incomeSources.map((item) => item.userId),
+      ...activeLogs.map((item) => item.habit.userId),
+      ...goalActivity.map((item) => item.userId),
+      ...assets.map((item) => item.userId),
+    ].filter((userId) => eligibleUserIds.has(userId)));
     const habitsById = new Map(habits.map((habit) => [habit.habitId, habit]));
     const expected = habits.reduce((sum, habit) => sum + expectedOccurrences(habit, from, to), 0);
     const completedPeriods = new Set();
@@ -205,7 +223,7 @@ router.get("/analytics", async (req, res, next) => {
         activeUsers: activeUserIds.size,
         habitCompletionRate: expected ? completed / expected : 0,
         averageGoalCompletionRate: averageGoal,
-        engagementRate: users.length ? engagementUserIds.size / users.length : 0,
+        engagementRate: users.length ? activeUserIds.size / users.length : 0,
       },
     });
   } catch (error) {

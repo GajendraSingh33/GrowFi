@@ -77,6 +77,9 @@ router.post("/login", async (req, res, next) => {
       throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password");
     }
 
+    // Login analytics are best-effort and must never delay or break authentication.
+    void prisma.loginEvent.create({ data: { userId: user.userId } }).catch(() => undefined);
+
     return res.status(200).json({
       data: {
         user: publicUser(user),

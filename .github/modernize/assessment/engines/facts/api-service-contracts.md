@@ -9,7 +9,7 @@ open-question contract is maintained in [`api-spec.md`](../../../../../api-spec.
 | Service | Port | Category | Purpose |
 |---|---:|---|---|
 | GrowFi Express API | Not configured | API Layer | Authenticated financial habit and wealth-tracking API |
-| PostgreSQL | External dependency | Infrastructure | Prisma persistence for the ten schema models |
+| PostgreSQL | External dependency | Infrastructure | Prisma persistence for the eleven schema models |
 
 ## API Endpoints Inventory
 
@@ -39,8 +39,11 @@ Persisted response contracts use the Prisma model field names from
 as ISO date/timestamp strings. `passwordHash` is never exposed. Computed
 `streakCount` (computed live from logs), `percentComplete`, net-worth totals, dashboard totals, and
 analytics KPIs are server-owned DTO values. Active users are distinct
-non-deleted users with expenses or habit logs in the 30-day period; engagement
-is users with either activity in the last 7 days divided by non-deleted users.
+non-deleted users with a LoginEvent or Expense, IncomeSource, HabitLog,
+SavingsGoal, or Asset create/update activity in the last 7 complete UTC days.
+Successful logins persist a LoginEvent as a best-effort analytics event.
+Engagement is users with either activity in the last 7 days divided by
+non-deleted users.
 Habit completion uses completed logs divided by expected frequency periods, and
 goal completion averages capped current/target amounts. Reopening resolved
 feedback requires an explicit `force: true` command.
@@ -57,7 +60,7 @@ seeded defaults have a null owner. Net worth is
 `SUM(assets.current_value) + SUM(savings_goals.current_amount)` and excludes
 income minus expenses. Database dates and timestamps are stored in UTC; the
 frontend converts them for local display. The active-user and engagement KPI
-definitions remain the only product-level questions.
+definitions are finalized in the API contract.
 
 ## Service Technology Matrix
 

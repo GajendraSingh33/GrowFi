@@ -66,6 +66,7 @@ model User {
   assets            Asset[]
   netWorthSnapshots NetWorthSnapshot[]
   adminFeedback     AdminFeedback[]
+  loginEvents       LoginEvent[]
 
   @@map("users")
 }
@@ -78,6 +79,7 @@ model IncomeSource {
   frequency    IncomeFrequency
   receivedDate DateTime        @map("received_date") @db.Date
   createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamp(6)
 
   user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
@@ -105,6 +107,7 @@ model Expense {
   description String?  @db.VarChar(255)
   expenseDate DateTime @map("expense_date") @db.Date
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
 
   user     User            @relation(fields: [userId], references: [userId], onDelete: Cascade)
   category ExpenseCategory @relation(fields: [categoryId], references: [categoryId])
@@ -135,6 +138,7 @@ model HabitLog {
   logDate     DateTime       @map("log_date") @db.Date
   status      HabitLogStatus
   createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamp(6)
 
   habit Habit @relation(fields: [habitId], references: [habitId], onDelete: Cascade)
 
@@ -203,4 +207,15 @@ model AdminFeedback {
   user User @relation(fields: [userId], references: [userId], onDelete: Restrict)
 
   @@map("admin_feedback")
+}
+
+model LoginEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  loggedInAt DateTime @default(now()) @map("logged_in_at") @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId, loggedInAt])
+  @@map("login_events")
 }
