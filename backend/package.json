@@ -2,11 +2,14 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "db:seed": "node prisma/seed.js",
-    "test": "jest --runInBand"
+"scripts": {
+  "start": "node src/server.js",
+  "dev": "nodemon src/server.js",
+  "build": "prisma generate",
+  "postinstall": "prisma generate",
+  "db:migrate:deploy": "prisma migrate deploy",
+  "db:seed": "node prisma/seed.js",
+  "test": "jest --runInBand"
   },
   "keywords": [],
   "author": "",
