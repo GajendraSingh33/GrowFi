@@ -39,12 +39,20 @@ function prismaError(error) {
   if (error && error.code === "P2002") {
     return new AppError(409, "EMAIL_ALREADY_EXISTS", "An account with this email already exists");
   }
+  if (error && (error.code === "P2021" || error.code === "P2022")) {
+    return new AppError(
+      503,
+      "AUTH_DATABASE_NOT_READY",
+      "Authentication is temporarily unavailable. Please try again shortly",
+    );
+  }
   return error;
 }
 
 router.post("/register", async (req, res, next) => {
   try {
     const input = parse(registerSchema, req.body);
+    jwtSecret();
     const passwordHash = await bcrypt.hash(input.password, 12);
     const user = await prisma.user.create({
       data: {
@@ -88,7 +96,7 @@ router.post("/login", async (req, res, next) => {
       },
     });
   } catch (error) {
-    return next(error);
+    return next(prismaError(error));
   }
 });
 

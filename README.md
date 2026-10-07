@@ -116,6 +116,11 @@ The API is available at `http://localhost:5000`. Verify it is running with:
 curl http://localhost:5000/api/health
 ```
 
+For production, set `DATABASE_URL` and a strong, unique `JWT_SECRET` in the
+hosting provider's environment settings, then use `npm start`. The start
+command applies all committed Prisma migrations before starting the API, so
+authentication is available after a fresh deployment.
+
 ### 3. Start the frontend
 
 In a second terminal:
