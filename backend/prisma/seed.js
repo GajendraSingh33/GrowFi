@@ -4,7 +4,13 @@ const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
 const { Pool } = require("pg");
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Render PostgreSQL requires SSL for external connections
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes("render.com")
+    ? { rejectUnauthorized: false }
+    : false,
+});
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 const defaultCategories = [
@@ -18,24 +24,24 @@ const defaultCategories = [
 ];
 
 async function main() {
-  await prisma.$transaction(async (transaction) => {
-    for (const name of defaultCategories) {
-      const existingCategory = await transaction.expenseCategory.findFirst({
-        where: { name },
-      });
+  for (const name of defaultCategories) {
+    const existing = await prisma.expenseCategory.findFirst({ where: { name } });
 
-      if (existingCategory) {
-        await transaction.expenseCategory.update({
-          where: { categoryId: existingCategory.categoryId },
-          data: { isDefault: true },
-        });
-      } else {
-        await transaction.expenseCategory.create({
-          data: { name, isDefault: true },
-        });
-      }
+    if (existing) {
+      await prisma.expenseCategory.update({
+        where: { categoryId: existing.categoryId },
+        data: { isDefault: true },
+      });
+      console.log(`Updated: ${name}`);
+    } else {
+      await prisma.expenseCategory.create({
+        data: { name, isDefault: true },
+      });
+      console.log(`Created: ${name}`);
     }
-  });
+  }
+
+  console.log("Seed completed successfully.");
 }
 
 main()
