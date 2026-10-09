@@ -14,19 +14,27 @@ const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
-// CORS — only allow explicitly listed origins.
-// Set ALLOWED_ORIGINS in your environment (comma-separated list).
-const rawOrigins = process.env.ALLOWED_ORIGINS || "http://localhost:5173";
-const allowedOrigins = rawOrigins.split(",").map((o) => o.trim()).filter(Boolean);
+// CORS — allow explicitly listed origins, wildcard, or local development origins.
+const rawOrigins = process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://localhost:5174,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:3000";
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map((o) => o.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+
+const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
 app.use(
   cors({
     origin(origin, callback) {
       // Allow server-to-server / same-origin requests (origin is undefined)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS: origin '${origin}' not allowed`));
+      const normalized = origin.replace(/\/+$/, "");
+      if (allowedOrigins.includes("*") || allowedOrigins.includes(normalized) || isLocalOrigin(normalized)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
     },
     credentials: true,
   }),
