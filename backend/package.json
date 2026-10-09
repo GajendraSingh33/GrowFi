@@ -2,14 +2,14 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "index.js",
-"scripts": {
-  "start": "npx prisma migrate deploy && node src/server.js",
-  "dev": "nodemon src/server.js",
-  "build": "npx prisma generate",
-  "postinstall": "npx prisma generate",
-  "db:migrate:deploy": "npx prisma migrate deploy",
-  "db:seed": "node prisma/seed.js",
-  "test": "jest --runInBand"
+  "scripts": {
+    "start": "npx prisma migrate deploy && node src/server.js",
+    "dev": "nodemon src/server.js",
+    "build": "npx prisma generate",
+    "postinstall": "npx prisma generate",
+    "db:migrate:deploy": "npx prisma migrate deploy",
+    "db:seed": "node prisma/seed.js",
+    "test": "jest --runInBand"
   },
   "keywords": [],
   "author": "",
@@ -18,8 +18,8 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
-    "cors": "^2.8.6",
     "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
