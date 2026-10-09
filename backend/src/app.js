@@ -15,7 +15,7 @@ const errorHandler = require("./middleware/errorHandler");
 const app = express();
 
 // CORS — allow explicitly listed origins, wildcard, or local development origins.
-const rawOrigins = process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://localhost:5174,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:3000";
+const rawOrigins = process.env.ALLOWED_ORIGINS || "https://grow-fi-eight.vercel.app,http://localhost:5173,http://localhost:5174,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:3000";
 const allowedOrigins = rawOrigins
   .split(",")
   .map((o) => o.trim().replace(/\/+$/, ""))
